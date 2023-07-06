@@ -1,0 +1,9 @@
+---
+
+hacluster_nodes: []
+hacluster_passwd: "admin"
+hacluster_virtual_ip: 10.10.10.10
+hacluster_configure: no
+
+hacluster_outputs_folder: hacluster_outputs
+hacluster_outputs_dir: "{{ ansible_env.HOME }}/{{ hacluster_outputs_folder }}"

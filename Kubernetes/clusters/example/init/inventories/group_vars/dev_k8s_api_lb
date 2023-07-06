@@ -1,0 +1,31 @@
+---
+
+hacluster_nodes:
+  - dev-k8s-lb01.example.com
+  - dev-k8s-lb02.example.com
+hacluster_passwd: "StrongPassword"
+hacluster_virtual_ip: 10.10.10.10
+
+nginx_stream_enabled: true
+nginx_ssl_dir: /etc/nginx/ssl
+
+# Nginx config
+nginx_config:
+  user: www-data
+  worker_processes: auto
+  pid: /var/run/nginx.pid
+  events:
+    worker_connections: 1024
+  stream:
+    upstreams:
+      - upstream: kubernetes-api-server
+        port: 6443
+        max_fails: 1
+        fail_timeout: 5s
+        strategy: least_conn
+        servers: "{{ groups['dev_k8s_masters'] }}"
+    servers:
+      - name: kubernetes-api-server
+        listen: 6443
+        proxy:
+          proxy_pass: kubernetes-api-server

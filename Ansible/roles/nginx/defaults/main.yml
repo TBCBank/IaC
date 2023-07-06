@@ -1,0 +1,105 @@
+---
+
+nginx_modules: []
+
+nginx_repo: "debian-ubuntu-nginx-remote"
+nginx_keyring: "nginx-archive-keyring.gpg"
+nginx_keyring_path: "/etc/apt/keyrings/{{ nginx_keyring }}"
+nginx_version: "1.22.1-1~jammy"
+
+nginx_stream_log_enabled: true
+nginx_http_enabled: false
+nginx_stream_enabled: false
+
+nginx_ssl_dir: /etc/nginx/ssl
+
+# Nginx config
+nginx_config:
+  user: www-data
+  worker_processes: auto
+  pid: /var/run/nginx.pid
+  worker_rlimit_nofile: 1024
+  events:
+    worker_connections: 1024
+  http:
+    keepalive_timeout: 65
+    gzip: "on"
+    upstreams:
+      - upstream: kube-state-metrics
+        port: 32001
+        max_fails: 5
+        fail_timeout: 5s
+        strategy: least_conn
+        servers:
+          - 1.1.1.1
+          - 2.2.2.2
+    servers:
+      - name: test_http
+        listen: 8080
+        server_name: 1.1.1.1
+        custom_multiline: |-
+          add_header X Y;
+          add_header A B;
+        custom_oneline:
+          rewrite: '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last'
+        root: /usr/share/nginx/html
+        index: index.html
+        ssl:
+          ssl_certificate: star.example.com.crt
+          ssl_certificate_key: star.example.com.key
+        try_files: "$uri $uri/index.html $uri.html =404"
+        headers:
+          - key: Cache-Control
+            value: private
+        proxy:
+          proxy_buffers: "16 4k"
+          proxy_buffer_size: "2k"
+          headers:
+            - key: Host
+              value: $host
+            - key: X-Real-IP
+              value: $remote_addr
+        locations:
+          - location: "/not_found"
+            index: index.html
+            try_files: "$uri $uri/index.html $uri.html =404"
+            rewrites:
+              - rewrite: '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last'
+            return: "302 Hi"
+            custom_multiline: |-
+              add_header X Y;
+              add_header A B;
+            custom_oneline:
+              rewrite: '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last'
+            headers:
+              - key: Cache-Control
+                value: private
+            proxy:
+              proxy_pass: http://localhost:8000
+              proxy_buffers: "16 4k"
+              proxy_buffer_size: "2k"
+              headers:
+                - key: Host
+                  value: $host
+                - key: X-Real-IP
+                  value: $remote_addr
+  stream:
+    upstreams:
+      - upstream: kube-state-metricsss
+        port: 32002
+        max_fails: 5
+        fail_timeout: 5s
+        strategy: least_conn
+        servers:
+          - 1.1.1.1
+          - 2.2.2.2
+    servers:
+      - name: test
+        listen: 8081
+        proxy:
+          proxy_pass: kube-state-metricsss
+        custom_multiline: |-
+          add_header X Y;
+          add_header A B;
+        custom_oneline:
+          rewrite: '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last'

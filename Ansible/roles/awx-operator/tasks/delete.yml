@@ -1,0 +1,25 @@
+---
+- name: delete awx chart inside {{ k8s_awx.namespace }} namespace
+  kubernetes.core.helm:
+    name: companyname
+    chart_ref: awx-operator/awx-operator
+    release_namespace: "{{ k8s_awx.namespace }}"
+    force: true
+    release_state: "{{ k8s_awx_state }}"
+    kubeconfig: ~/.kube/config
+
+- name: delete awx operator
+  kubernetes.core.k8s:
+    api_version: awx.ansible.com/v1beta1
+    namespace: "{{ k8s_awx.namespace }}"
+    kind: AWX
+    state: "{{ k8s_awx_state }}"
+    label_selectors:
+      - app.kubernetes.io/component=awx
+
+- name: delete awx namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_awx.namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_awx_state }}"

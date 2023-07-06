@@ -1,0 +1,76 @@
+---
+
+- name: create init config v{{ kubernetes_version }} 
+  template:
+    src: templates/init/init-config.yaml.j2
+    dest: "{{ kubernetes_outputs_dir }}/init-config.yaml"
+
+- name: kubeadm pull images v{{ kubernetes_version }} 
+  shell: kubeadm config images pull > {{ kubernetes_outputs_dir }}/config_images_pull
+  args:
+    creates: "{{ ansible_env.HOME }}/config_images_pull"
+
+- name: initialize kubernetes cluster v{{ kubernetes_version }} 
+  shell: |
+          kubeadm init --config {{ kubernetes_outputs_dir }}/init-config.yaml \
+          --upload-certs > {{ kubernetes_outputs_dir }}/cluster_initialized
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/cluster_initialized"
+
+- name: create kubeconfig dir 
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+
+- name: copy admin.conf to kubeconfig 
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    remote_src: yes
+
+- name: copy kubernetes network configuration v{{ kubernetes_version }}
+  template:
+    src: templates/init/calico.yaml.j2
+    dest: "{{ kubernetes_outputs_dir }}/calico.yaml"
+  when: kubernetes_network_provider == "calico"
+
+- name: install kubernetes network provider calico
+  shell: kubectl apply -f {{ kubernetes_outputs_dir }}/calico.yaml > {{ kubernetes_outputs_dir }}/network_provider_installed
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/network_provider_calico_installed"
+  when: kubernetes_network_provider == "calico"
+
+- name: download cilium zipped archive
+  get_url:
+    url: https://repository.example.com/repository/cilium-linux-amd64/cilium-linux-amd64.tar.gz
+    dest: "{{ kubernetes_outputs_dir }}/cilium-linux-amd64.tar.gz"
+  when: 
+    - kubernetes_network_provider == "cilium"
+    - kubernetes_cilium_init|bool
+
+- name: extract cilium zipped archive
+  unarchive:
+    src: "{{ kubernetes_outputs_dir }}/cilium-linux-amd64.tar.gz"
+    dest: "{{ kubernetes_outputs_dir }}"
+    remote_src: yes
+  when: 
+    - kubernetes_network_provider == "cilium"
+    - kubernetes_cilium_init|bool
+
+- name: copy cilium bin file
+  copy:
+    src: "{{ kubernetes_outputs_dir }}/cilium"
+    dest: /usr/local/bin/
+    remote_src: yes
+    mode: preserve
+  when: 
+    - kubernetes_network_provider == "cilium"
+    - kubernetes_cilium_init|bool
+
+- name: install kubernetes network provider cilium
+  shell: cilium install > {{ kubernetes_outputs_dir }}/network_provider_cilium_installed
+  when: 
+    - kubernetes_network_provider == "cilium"
+    - kubernetes_cilium_init|bool
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/network_provider_cilium_installed"

@@ -1,0 +1,15 @@
+---
+
+###### Certificate management for kubernetes!!!!!
+container_service: containerd
+container_service_containerd_version: 1.6.18-1
+container_service_proxy_enabled: false
+kubernetes_network_provider: cilium
+
+kubernetes_upgrade: false
+kubernetes_version: 1.27.2
+kubernetes_control_endpoint_address: dev-k8s.example.com
+kubernetes_pod_network_cidr: 10.71.0.0/16
+kubernetes_service_network_cidr: 10.72.0.0/16
+kubernetes_master_nodes: "{{ groups['dev_k8s_masters'] }}"
+kubernetes_worker_nodes: "{{ groups['dev_k8s_workers'] }}"

@@ -1,0 +1,4 @@
+- import_tasks: install.yml
+  when: k8s_nginx_state == "present"
+- import_tasks: delete.yml
+  when: k8s_nginx_state == "absent"

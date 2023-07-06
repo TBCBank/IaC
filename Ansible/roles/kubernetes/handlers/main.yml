@@ -1,0 +1,15 @@
+---
+
+- name: upgrade cluster
+  shell: kubeadm upgrade apply {{ kubernetes_version }} -y
+  when: kubernetes_init|bool and kubernetes_upgrade|bool
+
+- name: upgrade node
+  shell: kubeadm upgrade node
+  when: not kubernetes_init|bool and kubernetes_upgrade|bool
+
+- name: restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: yes

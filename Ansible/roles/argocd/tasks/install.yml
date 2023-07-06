@@ -1,0 +1,126 @@
+---
+- name: create argocd namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_argocd.namespace | lower}}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: install argocd
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('file', 'files/argocd.yml')}}"
+
+- name: add secrets for argocd
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('file', 'files/secrets.yml')}}"
+
+## SETUP LDAP
+- name: patch ldap secrets to argocd
+  kubernetes.core.k8s:
+    name: argocd-secret
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: Secret
+    definition:
+      data:
+        dex.ldap.bindPW: "{{ k8s_argocd_dex_ldap_bindpw }}"
+        dex.ldap.bindDN: "{{ k8s_argocd_dex_ldap_binddn }}"
+
+- name: patch ldap configmap to argocd
+  kubernetes.core.k8s:
+    name: argocd-cm
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: ConfigMap
+    definition: "{{ lookup('template', 'argocd-ldap.yml.j2') | from_yaml }}"
+  register: argocd_ldap_patched
+
+- name: create rbac and ingress from manifests
+  kubernetes.core.k8s:
+    state: present
+    template:
+      - path: 'argocd-rbac.yml.j2'
+      - path: 'argocd-ingress.yml.j2'
+
+- name: patch vault plugin configmap to argocd
+  kubernetes.core.k8s:
+    name: argocd-cm
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: ConfigMap
+    definition: "{{ lookup('template', 'plugins/argocd-vault-configmap.yml.j2') | from_yaml }}"
+  register: k8s_argocd_plugins_patched
+
+## Add hashicorp vault plugin
+- name: create secret for hashicorp vault plugin
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: argocd-vault-plugin-credentials
+        namespace: "{{ k8s_argocd.namespace | lower }}"
+      type: Opaque
+      stringData:
+        VAULT_ADDR: "{{ k8s_argocd_plugins.secret.vault_addr }}"
+        # VAULT_TOKEN: "{{ k8s_argocd_plugins.secret.vault_token }}"
+        AVP_TYPE: vault
+        # AVP_AUTH_TYPE: token
+        AVP_AUTH_TYPE: userpass
+        AVP_USERNAME: "{{ k8s_argocd_plugins.secret.avp_username }}"
+        AVP_PASSWORD: "{{ k8s_argocd_plugins.secret.avp_password }}"
+  register: k8s_argocd_plugins_patched
+
+- name: patch vault plugin volume to argocd-repo-server deployment
+  kubernetes.core.k8s:
+    name: argocd-repo-server
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: Deployment
+    definition: "{{ lookup('template', 'plugins/argocd-vault-volume.yml.j2') | from_yaml }}"
+  register: k8s_argocd_plugins_patched
+
+- name: patch vault plugin volumemount to argocd-repo-server container
+  kubernetes.core.k8s:
+    name: argocd-repo-server
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: Deployment
+    definition: "{{ lookup('template', 'plugins/argocd-vault-volumemount.yml.j2') | from_yaml }}"
+  register: k8s_argocd_plugins_patched
+
+- name: patch vault plugin secretref to argocd-repo-server container
+  kubernetes.core.k8s:
+    name: argocd-repo-server
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: Deployment
+    definition: "{{ lookup('template', 'plugins/argocd-vault-secretref.yml.j2') | from_yaml }}"
+  register: k8s_argocd_plugins_patched
+
+- name: patch vault plugin initcontainer to argocd deployment
+  kubernetes.core.k8s:
+    name: argocd-repo-server
+    namespace: "{{ k8s_argocd.namespace | lower }}"
+    state: patched
+    kind: Deployment
+    definition: "{{ lookup('template', 'plugins/argocd-vault-initcontainer.yml.j2') | from_yaml }}"
+  register: k8s_argocd_plugins_patched
+
+## RELOAD ARGOCD SERVER AND DEX
+- name: restart argocd-server if configmap/secrets changed
+  shell: kubectl  delete pod -n argocd -l app.kubernetes.io/name=argocd-server
+  when: 
+    - argocd_ldap_patched.changed
+    - k8s_argocd_plugins_patched.changed
+
+- name: restart argocd-dex-server if configmap/secrets changed
+  shell: kubectl  delete pod -n argocd -l app.kubernetes.io/name=argocd-dex-server
+  when: 
+    - argocd_ldap_patched.changed
+    - k8s_argocd_plugins_patched.changed

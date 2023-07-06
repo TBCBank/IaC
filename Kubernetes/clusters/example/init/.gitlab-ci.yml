@@ -1,0 +1,28 @@
+stages:
+ - ansible
+ - kubernetes
+
+deploy:
+ stage: ansible
+ before_script:
+  - rm -rf ~/.ansible/roles/*
+ script: 
+  - ansible-galaxy install --role-file roles/requirements.yml
+  - ansible-playbook -i inventories/dev playbooks/dev.yml --vault-id iac@$ANSIBLE_VAULT_PASSWORD
+  - ubuntu
+  - dev
+ when: manual
+
+status:
+ stage: kubernetes
+ before_script:
+  - scp node_label.sh root@$MASTER_HOST:/tmp/node_label.sh
+  - ssh -l root $MASTER_HOST bash /tmp/node_label.sh
+ script: 
+  - ssh -l root $MASTER_HOST kubectl get nodes
+  - ssh -l root $MASTER_HOST kubectl get pods -A
+ when: manual
+ tags:
+  - shell
+  - ubuntu
+  - dev

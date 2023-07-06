@@ -1,0 +1,75 @@
+stages:
+  - helm
+  - argocd
+
+variables:
+  CLUSTER_NAME: https://dev-k8s.example.com:6443
+  ARGOCD_URL: argocd.example.com
+
+packege:chart:
+  stage: helm
+  before_script:
+    - rm -rf charts/* *$CI_PROJECT_NAME-*.tgz .gitignore .gitlab-ci.yaml check_repo.sh manifests README.md
+  script:
+    - helm dependency build . && helm dependency update . && helm package .
+  artifacts:
+    paths:
+      - dev-k8s-$CI_PROJECT_NAME-*.tgz
+    expire_in: 1 hrs
+  only:
+    - main
+  when: manual
+  tags:
+    - dev
+    - shell
+    - ubuntu
+
+push:chart:
+  stage: helm
+  before_script:
+     - bash check_repo.sh
+  needs: 
+    - packege:chart
+  script:
+     - HELM_CHART_VERSION=$(grep -B0 'version:' Chart.yaml | head -n1 | awk '{ print $2}')
+     - helm repo add --username $ARGOCD_REPO_USER --password $ARGOCD_REPO_TOKEN dev-k8s-$CI_PROJECT_NAME https://gitlab.example.com/api/v4/projects/$CI_PROJECT_ID/packages/helm/stable
+     - helm cm-push dev-k8s-$CI_PROJECT_NAME-$HELM_CHART_VERSION.tgz dev-k8s-$CI_PROJECT_NAME
+  when: manual
+  only:
+    - main
+  tags:
+    - dev
+    - shell
+    - ubuntu
+
+add:repoitory:
+  stage: argocd
+  image:
+    name: argoproj/argocd:v2.5.17
+    entrypoint: ['']
+  script:
+    - argocd login $ARGOCD_URL --skip-test-tls --username $ARGOCD_USERNAME --password $DEV_K8S_ARGOCD_PASSWORD --insecure --grpc-web
+    - argocd cert add-tls --from $GITLAB_PEM gitlab.example.com
+    - sleep 10
+    - argocd repo add --type helm https://gitlab.example.com/api/v4/projects/$CI_PROJECT_ID/packages/helm/stable --name $CI_PROJECT_NAME --username $ARGOCD_REPO_USER --password $ARGOCD_REPO_TOKEN
+  only:
+    - main
+  when: manual
+  tags:
+    - kubernetes
+
+deploy:application:
+  stage: argocd
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  before_script:
+    - kubectl apply -f manifests/project.yaml
+  script:
+    - kubectl apply -f manifests/resources/
+    - kubectl apply -f manifests/application.yaml
+  only:
+    - main
+  when: manual
+  tags:
+    - kubernetes

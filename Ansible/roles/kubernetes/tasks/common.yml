@@ -1,0 +1,123 @@
+---
+
+- name: create folder for kubernetes outputs
+  file:
+    path: "{{ kubernetes_outputs_dir }}"
+    state: directory
+    recurse: yes
+
+- name: disable swappiness
+  shell: swapoff -a > {{ kubernetes_outputs_dir }}/swap_disabled
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/swap_disabled"
+
+- name: configure fstab
+  replace:
+    path: /etc/fstab
+    regexp: '.*swap.*'
+    replace: ''
+
+- name: enable br_netfilter and modprobe module
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - br_netfilter
+    - overlay
+
+- name: create content for containerd.conf
+  copy:
+    src: files/containerd/containerd.conf
+    dest: /etc/modules-load.d/containerd.conf
+    mode: 0660
+
+- name: modify sysctl
+  sysctl:
+    name: "{{ item }}"
+    value: 1
+    state: present
+    sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+    reload: yes
+  with_items:
+    - net.bridge.bridge-nf-call-ip6tables
+    - net.bridge.bridge-nf-call-iptables
+    - net.ipv4.ip_forward
+
+- name: create containerd dir
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: create content for containerd config.toml
+  copy:
+    src: files/containerd/containerd_config.toml
+    dest: /etc/containerd/config.toml
+  notify: restart containerd
+  register: containerd_content
+
+- name: restart/enable containerd
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
+  when: containerd_content.changed
+
+- name: add kubernetes gpg to keyring
+  apt_key:
+    url: https://{{ baselinux_repo_server }}/repository/{{ kubernetes_repo }}/doc/apt-key.gpg
+    keyring: "{{ kubernetes_keyring_path }}"
+    state: present
+
+- name: add kubernetes repo
+  apt_repository:
+    repo: deb [arch=amd64 signed-by={{ kubernetes_keyring_path }}] https://{{ baselinux_repo_server }}/repository/{{ kubernetes_repo }} kubernetes-xenial main
+    state: present
+    filename: "companyname-kubernetes"
+
+- name: install kubelet
+  apt:
+    name: "kubelet={{ kubernetes_kubelet_version }}"
+    state: present
+    allow_downgrade: yes
+    allow_change_held_packages: true
+  notify:
+    - upgrade cluster
+    - upgrade node
+    - restart kubelet
+
+- name: install kubeadm
+  apt:
+    name: "kubeadm={{ kubernetes_kubeadm_version }}"
+    state: present
+    allow_downgrade: yes
+    allow_change_held_packages: true
+  notify:
+    - upgrade cluster
+    - upgrade node
+    - restart kubelet
+
+- name: install kubectl
+  apt:
+    name: "kubectl={{ kubernetes_kubectl_version }}"
+    state: present
+    allow_downgrade: yes
+    allow_change_held_packages: true
+  notify:
+    - upgrade cluster
+    - upgrade node
+    - restart kubelet
+
+- name: hold kube version
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  with_items:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: restart/enable kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+    enabled: yes

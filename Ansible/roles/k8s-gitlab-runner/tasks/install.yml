@@ -1,0 +1,49 @@
+---
+- name: create a gitlab-runner namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_gitlab_runner.namespace | lower }}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_gitlab_runner_state }}"
+
+- name: add gitlab-runner stable chart repo
+  kubernetes.core.helm_repository:
+    name: "{{ k8s_gitlab_runner.namespace | lower }}"
+    repo_url: "https://repository.example.com/repository/helm-repo-gitlab-runner/"
+    kubeconfig: ~/.kube/config
+
+- name: update repo cache
+  shell: helm repo update
+
+- name: add secrets for gitlab-runner
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_gitlab_runner.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('template', 'secrets.yml.j2' | from_yaml )}}"
+
+- name: add clusterrole for gitlab-runner
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_gitlab_runner.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('file', 'files/clusterrole.yml' )}}"
+
+- name: add clusterrolebinding for gitlab-runner
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_gitlab_runner.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('file', 'files/clusterrolebinding.yml' )}}"
+
+- name: deploy gitlab-runner
+  kubernetes.core.helm:
+    name: "{{ k8s_gitlab_runner.name }}"
+    chart_ref: gitlab-runner/gitlab-runner
+    release_name: "{{ k8s_gitlab_runner.name }}"
+    release_namespace: "{{ k8s_gitlab_runner.namespace }}"
+    create_namespace: true
+    update_repo_cache: true
+    replace: true
+    state: "{{ k8s_gitlab_runner_state }}"
+    release_state: "{{ k8s_gitlab_runner_state }}"
+    wait: true
+    values: "{{ lookup('template', 'gitlab-runner-values.yml.j2') | from_yaml }}"
+    kubeconfig: ~/.kube/config

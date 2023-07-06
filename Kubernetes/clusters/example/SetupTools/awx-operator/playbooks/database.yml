@@ -1,0 +1,8 @@
+---
+
+- hosts: database
+  roles:
+    - baselinux
+    - postgresql
+  vars:
+    baselinux_repo_server: "repository.example.com"

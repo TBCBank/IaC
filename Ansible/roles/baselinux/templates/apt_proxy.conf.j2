@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+
+Acquire::http::Proxy "{{ baselinux.proxy.protocol.http }}://{{ baselinux.proxy.server }}:{{ baselinux.proxy.port }}";
+Acquire::https::Proxy "{{ baselinux.proxy.protocol.https }}://{{ baselinux.proxy.server }}:{{ baselinux.proxy.port }}";
+Acquire::http::Proxy::{{ baselinux.repo.server }} DIRECT;

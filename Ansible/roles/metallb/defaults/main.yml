@@ -1,0 +1,10 @@
+---
+
+## Metallb
+# options "present" or "absent"
+k8s_metallb_state: present 
+
+k8s_metallb_ip_pool_name: first-pool
+k8s_metallb_ip_pool: 10.20.30.40-10.20.30.45
+k8s_metallb_ip_pool_advertisement: l2advertisement
+k8s_metallb_namespace: metallb-system

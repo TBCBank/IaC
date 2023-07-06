@@ -1,0 +1,29 @@
+---
+
+- name: add postgresql gpg to keyring
+  apt_key:
+    url: https://{{ baselinux_repo_server }}/repository/{{ postgresql_repo }}/ACCC4CF8.asc
+    state: present
+
+- name: add postgresql repo
+  apt_repository:
+    repo: deb https://{{ baselinux_repo_server }}/repository/{{ postgresql_repo }} jammy-pgdg main
+    state: present
+    filename: "companyname-postgresql"
+  with_items:
+    - "{{ postgresql_repo }}"
+
+- name: install postgresql{{ postgresql_version }}
+  apt:
+    name: postgresql-{{ postgresql_version }}
+    state: present
+
+- name: hold postgresql{{ postgresql_version }}
+  dpkg_selections:
+    name: postgresql-{{ postgresql_version }}
+    selection: hold
+
+- name: install postgresql-client-{{ postgresql_version }}
+  apt:
+    name: postgresql-client-{{ postgresql_version }}
+    state: present

@@ -1,0 +1,27 @@
+controller:
+  kind: "{{ k8s_nginx.kind }}"
+  hostNetwork: false
+  dnsPolicy: ClusterFirst
+  nginxDebug: false
+  logLevel: 1
+  nginxReloadTimeout: 60000
+
+  image:
+    repository: nginx/nginx-ingress
+    tag: "{{ k8s_nginx.image.tag }}"
+    pullPolicy: IfNotPresent
+  terminationGracePeriodSeconds: 30
+
+  resources:
+    requests:
+      cpu: "{{ k8s_nginx.resources.requests.cpu }}"
+      memory: "{{ k8s_nginx.resources.requests.memory }}"
+  limits:
+    cpu: "{{ k8s_nginx.resources.limits.cpu }}"
+    memory: "{{ k8s_nginx.resources.limits.memory }}"
+
+  service:
+    create: true
+    type: "{{ k8s_nginx.service.type }}"
+    externalTrafficPolicy: Local
+  disableIPV6: true

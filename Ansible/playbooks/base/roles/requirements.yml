@@ -1,0 +1,5 @@
+
+- name: baselinux
+  src: git@gitlab.example.com:iac/ansible/roles/baselinux.git
+  scm: git
+  version: "1.0.0"

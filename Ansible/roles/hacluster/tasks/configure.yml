@@ -1,0 +1,49 @@
+---
+
+- name: generate nodes string
+  set_fact:
+    hacluster_joined_nodes: "{{ hacluster_nodes | join(' ') }}"
+
+- name: debug haclusters
+  debug:
+    msg: "{{ hacluster_joined_nodes }}"
+
+- name: does pcs setup file exists
+  stat:
+    path: "{{ hacluster_outputs_dir }}/hacluster_setup"
+  register: hacluster_setup_file
+
+- name: destroy clusters
+  shell: pcs cluster destroy
+  when: not hacluster_setup_file.stat.exists
+
+- name: authenticate cluster nodes
+  shell: pcs host auth -u hacluster -p '{{ hacluster_passwd }}' {{ hacluster_joined_nodes }} > {{ hacluster_outputs_dir }}/hacluster_auth
+  args:
+    creates: "{{ hacluster_outputs_dir }}/hacluster_auth"
+
+- name: setup cluster nodes
+  shell: pcs cluster setup hacluster {{ hacluster_joined_nodes }} --force > {{ hacluster_outputs_dir }}/hacluster_setup
+  args:
+    creates: "{{ hacluster_outputs_dir }}/hacluster_setup"
+
+- name: start/enable cluster
+  shell: |
+    pcs cluster start --all
+    pcs cluster enable --all
+
+- name: configure cluster properties
+  shell: |
+    pcs property set stonith-enabled=false
+    pcs property set no-quorum-policy=ignore > {{ hacluster_outputs_dir }}/hacluster_properties
+  args:
+    creates: "{{ hacluster_outputs_dir }}/hacluster_properties"
+  notify:
+    - restart hacluster
+
+- name: create virtual_ip resource
+  shell: pcs resource create virtual_ip ocf:heartbeat:IPaddr2 ip={{ hacluster_virtual_ip }} cidr_netmask=32 op monitor interval=30s > {{ hacluster_outputs_dir }}/hacluster_virtual_ip
+  args:
+    creates: "{{ hacluster_outputs_dir }}/hacluster_virtual_ip"
+  notify:
+    - restart hacluster

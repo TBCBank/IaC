@@ -1,0 +1,12 @@
+---
+- import_tasks: common.yml
+  when: ansible_os_family == "Debian"
+  
+- import_tasks: init.yml
+  when: (kubernetes_init | bool) and (ansible_os_family == "Debian")
+
+- import_tasks: master.yml
+  when: (kubernetes_master | bool) and (ansible_os_family == "Debian")
+
+- import_tasks: worker.yml
+  when: (kubernetes_worker | bool) and (ansible_os_family == "Debian")

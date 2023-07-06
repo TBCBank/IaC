@@ -1,0 +1,10 @@
+galaxy_info:
+  author: Giorgi Katcharava, Mate Gogiberidze, Aleksandre Kvaichadze, Nika Kostava, Saba Sakvarelidze, Davit Gogritchiani, Davit Samadashvili
+  description: This Ansible role installs and configures Nginx on Debian-based systems. It provides support for SSL, custom server configurations, HTTP and stream upstreams, and various other configuration options.
+
+  min_ansible_version: 2.9
+
+  platforms:
+  - name: Ubuntu
+    versions:
+    - 22.04

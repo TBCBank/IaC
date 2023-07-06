@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ k8s_awx_secrets.postgres_name }}
+  namespace: {{ k8s_awx.namespace }}
+stringData:
+  host: "{{ k8s_awx_secrets.postgres_stringdata.database_host }}"
+  port: "{{ k8s_awx_secrets.postgres_stringdata.database_port }}"
+  database: "{{ k8s_awx_secrets.postgres_stringdata.database_name }}"
+  username: "{{ k8s_awx_secrets.postgres_stringdata.database_username }}"
+  password: "{{ k8s_awx_secrets_database_password }}"
+  sslmode: "{{ k8s_awx_secrets.postgres_stringdata.database_ssl }}"
+  type: unmanaged
+type: Opaque

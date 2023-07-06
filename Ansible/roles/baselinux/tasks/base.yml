@@ -1,0 +1,45 @@
+---
+
+- name: set hostname
+  hostname:
+    name: "{{ baselinux.hostname }}"
+  notify:
+    - restart rsyslog
+
+- name: modify environment variables
+  template:
+    src: templates/environment.j2
+    dest: /etc/environment
+
+- name: set timezone
+  timezone:
+    name: "{{ baselinux.timezone }}"
+  notify:
+    - restart rsyslog
+
+- name: modify ulimit default parameters
+  copy:
+    src: files/limits.conf
+    dest: /etc/security/limits.conf
+    mode: 0644
+
+- name: configure ssh client
+  template:
+    src: templates/ssh_config.j2
+    dest: /etc/ssh/ssh_config
+
+- name: configure sshd
+  template:
+    src: templates/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+  notify:
+    - restart sshd
+
+- import_tasks: motd-banner.yml
+
+- name: set root password
+  user:
+    name: root
+    update_password: always
+    password: "{{ root_password | string | password_hash('sha512') }}"
+  become: true

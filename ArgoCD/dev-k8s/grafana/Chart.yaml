@@ -1,0 +1,20 @@
+
+apiVersion: v2
+appVersion: v0.66.0
+version: 47.3.0
+dependencies:
+- condition: grafana.enabled
+  name: grafana
+  repository: https://grafana.github.io/helm-charts
+  version: 6.57.*
+home: https://github.com/prometheus-operator/kube-prometheus
+keywords:
+- operator
+- prometheus
+- kube-prometheus
+kubeVersion: '>=1.16.0-0'
+name: grafana
+sources:
+- https://github.com/prometheus-community/helm-charts
+- https://github.com/prometheus-operator/kube-prometheus
+type: application

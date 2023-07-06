@@ -1,0 +1,16 @@
+---
+- name: delete gitlab-runner chart inside {{ k8s_gitlab_runner.namespace }} namespace
+  kubernetes.core.helm:
+    name: "{{ k8s_gitlab_runner.name }}"
+    chart_ref: gitlab/gitlab-runner
+    release_namespace: "{{ k8s_gitlab_runner.namespace }}"
+    create_namespace: true
+    force: true
+    release_state: "{{ k8s_gitlab_runner_state }}"
+
+- name: delete a gitlab-runner namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_gitlab_runner.namespace | lower }}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_gitlab_runner_state }}"

@@ -1,0 +1,27 @@
+---
+
+- name: baselinux
+  scm: git
+  src: git@gitlab.example:iac/ansible/roles/baselinux.git
+  version: "1.0.0"
+
+- name: container-service
+  scm: git
+  src: git@gitlab.example:iac/ansible/roles/container-service.git
+  version: "1.0.0"
+
+- name: kubernetes
+  scm: git
+  src: git@gitlab.example:iac/ansible/roles/kubernetes.git
+  version: "1.0.0"
+
+- name: nginx
+  scm: git
+  src: git@gitlab.example:iac/ansible/roles/nginx.git
+  version: "1.0.0"
+
+- name: hacluster
+  scm: git
+  src: git@gitlab.example:iac/ansible/roles/hacluster.git
+  version: "1.0.0"
+  

@@ -1,0 +1,52 @@
+---
+
+- name: make sure update-motd directory exists 
+  file:
+    path: "{{ baselinux.motd.location }}"
+    state: directory
+    mode: '0755'
+
+- name: get default motd scripts
+  find:
+    paths: "{{ baselinux.motd.location }}"
+    patterns: "*"
+    excludes: "{{ baselinux.motd.name }}"
+  register: files_to_delete
+
+- name: delete default motd scripts 
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_to_delete.files }}"
+
+- name: copy new motd file
+  copy:
+    src: files/motd/motd
+    dest: "{{ baselinux.motd.location }}"
+    mode: '0740'
+    owner: root
+    group: root
+
+- name: copy banner for sshd
+  copy:
+    src: files/motd/banner
+    dest: "{{ baselinux.sshd.banner }}"
+    mode: '0644'
+    owner: root
+    group: root
+  notify:
+    - restart sshd
+
+- name: redhat specific
+  block:
+  - name: remove motd scripts from /etc/profile
+    ansible.builtin.lineinfile:
+      path: "/etc/profile"
+      regexp: "{{ baselinux.motd.location }}"
+      state: absent
+
+  - name: motd script to profile
+    lineinfile:
+      dest: /etc/profile
+      line: "{{ baselinux.motd.location }}motd"
+  when: ansible_os_family == "RedHat"

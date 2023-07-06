@@ -1,0 +1,154 @@
+{{ ansible_managed | comment }}
+
+{% if item.map is defined %}
+map {{ item.map }} {
+{%     if item.hostnames is defined and item.hostnames                            %}
+        hostnames;
+{%     endif                                                                      %}
+{%     if item.default is defined and item.default                                %}
+        default {{ item.default }};
+{%     endif                                                                      %}
+{%     if item.mapping is defined and item.mapping                                %}
+        {{ item.mapping | indent(8) | regex_replace("(?m)^\s*$", "") }}
+{%     endif                                                                      %}
+{%     if item.include is defined and item.include                                %}
+{%         for file in item.include                                               %}
+        include {{ file }};
+{%         endfor                                                                 %}
+{%     endif                                                                      %}
+}
+{% endif %}
+
+server {
+{% if item.listen is defined %}
+    listen {{ item.listen }};
+{% endif %}
+{% if item.server_name is defined %}
+    server_name {{ item.server_name }};
+{% else %}
+    server_name _;
+{% endif %}
+{% if item.root is defined %}
+    root {{ item.root }};
+{% endif %}
+{% if item.index is defined %}
+    index {{ item.index }};
+{% endif %}
+{% if item.ssl is defined %}
+    ssl_certificate {{ nginx_ssl_dir }}/{{ item.ssl.ssl_certificate }};
+    ssl_certificate_key {{ nginx_ssl_dir }}/{{ item.ssl.ssl_certificate_key }};
+{% endif %}
+{% if item.rewrites is defined %}
+{% for rewrite in item.rewrites %}
+    rewrite {{ rewrite }};
+{% endfor %}
+{% endif %}
+{% if item.return is defined %}
+    return {{ item.return }};
+{% endif %}
+{% if item.custom_multiline is defined %}
+{{ item.custom_multiline }}
+{% endif %}
+{% if item.custom_oneline is defined %}
+{% for key, value in item.custom_oneline.items() %}
+    {{ key }} {{ value }};
+{% endfor %}
+{% endif %}
+{% if item.headers is defined %}
+{% for header in item.headers %}
+    add_header {{ header.key }} {{ header.value }};
+{% endfor %}
+{% endif %}
+{% if item.proxy is defined %}
+{% if item.proxy.headers is defined and item.proxy.headers|length > 0 %}
+{% for header in item.proxy.headers %}
+    proxy_set_header {{ header.key }} {{ header.value }};
+{% endfor %}
+{% endif %}
+{% if item.proxy.proxy_buffers is defined %}
+    proxy_buffers {{ item.proxy.proxy_buffers }};
+{% endif %}
+{% if item.proxy.proxy_buffer_size is defined %}
+    proxy_buffer_size {{ item.proxy.proxy_buffer_size }};
+{% endif %}
+{% endif %}
+{% if item.locations is defined and item.locations|length > 0 %}
+{% for location in item.locations %}
+    location {{ location.location }} {
+{% if location.index is defined %}
+        index {{ location.index }};
+{% endif %}
+{% if location.try_files is defined %}
+        try_files {{ location.try_files }};
+{% endif %}
+{% if location.rewrites is defined %}
+{% for rewrite in location.rewrites %}
+        rewrite {{ rewrite.rewrite }};
+{% endfor %}
+{% endif %}
+{% if location.return is defined %}
+        return {{ location.return }};
+{% endif %}
+{% if location.custom_multiline is defined %}
+{{ location.custom_multiline }}
+{% endif %}
+{% if location.custom_oneline is defined %}
+{% for key, value in location.custom_oneline.items() %}
+        {{ key }} {{ value }};
+{% endfor %}
+{% endif %}
+{% if location.headers is defined %}
+{% for header in location.headers %}
+        add_header {{ header.key }} {{ header.value }};
+{% endfor %}
+{% endif %}
+{% if location.fastcgi_pass is defined %}
+        fastcgi_pass {{ location.fastcgi_pass }};
+{% endif %}
+{% if location.fastcgi_param is defined %}
+        fastcgi_param {{ location.fastcgi_param }};
+{% endif %}
+{% if location.fastcgi_index is defined %}
+        fastcgi_index {{ location.fastcgi_index }};
+{% endif %}
+{% if location.include is defined %}
+        include {{ location.include }};
+{% endif %}
+
+{% if item.map is defined %}
+{% endif %}
+{% if location.proxy is defined %}
+    {% if location.frontend_app_csr is defined %}
+    if ($is_bot = 0) {
+        proxy_pass {{ location.frontend_app_csr.proxy_pass }};
+        break;
+    }
+    {% endif %}
+    {% if location.frontend_app_ssr is defined %}
+    if ($is_bot = 1) {
+        proxy_pass {{ location.frontend_app_ssr.proxy_pass }};
+        break;
+    }
+    {% endif %}
+    proxy_pass {{ location.proxy.proxy_pass }};
+{% if location.proxy.headers is defined and location.proxy.headers|length > 0 %}
+{% for header in location.proxy.headers %}
+        proxy_set_header {{ header.key }} {{ header.value }};
+{% endfor %}
+{% endif %}
+{% if location.proxy.cacheheaders is defined and location.proxy.cacheheaders|length > 0 %}
+{% for header in location.proxy.cacheheaders %}
+        add_header {{ header.key }} "{{ header.value }}";
+{% endfor %}
+{% endif %}
+{% if location.proxy.proxy_buffers is defined %}
+        proxy_buffers {{ location.proxy.proxy_buffers }};
+{% endif %}
+{% if location.proxy.proxy_buffer_size is defined %}
+        proxy_buffer_size {{ location.proxy.proxy_buffer_size }};
+{% endif %}
+{% endif %}
+    }
+{% endfor %}
+{% endif %}
+}

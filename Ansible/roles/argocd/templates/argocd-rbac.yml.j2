@@ -1,0 +1,17 @@
+#jinja2: lstrip_blocks: True
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: "{{ k8s_argocd.namespace }}"
+data:
+  policy.default: role:none
+  scopes: '[groups, email]'
+  policy.csv: |
+      p, role:none, *, *, */*, deny
+  {% for admin in k8s_argocd.policy.admins %}
+      g, {{ admin }}, role:admin
+  {% endfor %}
+  {% for readonly in k8s_argocd.policy.readonlies %}
+      g, {{ readonly }}, role:readonly
+  {% endfor %}

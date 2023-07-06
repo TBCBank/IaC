@@ -1,0 +1,6 @@
+---
+
+- src: git@gitlab.example.com:iac/ansible/roles/argocd.git
+  scm: git
+  version: "1.0.0"
+  name: argocd

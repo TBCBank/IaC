@@ -1,0 +1,24 @@
+---
+container_service: containerd
+
+
+container_service_repo: debian-ubuntu-docker-remote
+container_service_gpg: docker.gpg
+container_service_gpg_path: /etc/apt/keyrings/{{ container_service_gpg }}
+
+container_service_containerd: containerd.io={{ container_service_containerd_version }}
+container_service_containerd_version: 1.6.18-1
+
+container_service_docker:
+  - docker-ce={{ container_service_docker_version }}
+  - docker-ce-cli={{ container_service_docker_version }}
+  - containerd.io 
+  - docker-buildx-plugin 
+  - docker-compose-plugin
+container_service_docker_version: 5:23.0.1-1~ubuntu.22.04~jammy
+
+
+container_service_proxy_enabled: false
+container_service_http_proxy: "http://proxy.example.com:3128"
+container_service_https_proxy: "http://proxy.example.com:3128"
+container_service_no_proxy: "localhost,127.0.0.1,example.com"

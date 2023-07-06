@@ -1,0 +1,42 @@
+---
+- name: add awx stable helm chart
+  kubernetes.core.helm_repository:
+    name: awx
+    repo_url: "https://ansible.github.io/awx-operator/"
+    kubeconfig: ~/.kube/config
+
+- name: update repo cache
+  shell: helm repo update
+
+- name: deploy awx helm chart in {{ k8s_awx.namespace }} namespace
+  kubernetes.core.helm:
+    name: "{{ k8s_awx.name }}"
+    chart_ref: awx/awx-operator
+    release_namespace: "{{ k8s_awx.namespace }}"
+    chart_version: "{{ k8s_awx_chart_version }}"
+    create_namespace: true
+    wait: true
+    force: true
+    state: "{{ k8s_awx_state }}"
+    release_state: "{{ k8s_awx_state }}"
+    kubeconfig: ~/.kube/config
+
+- name: add secrets for awx
+  kubernetes.core.k8s:
+    namespace: "{{ k8s_awx.namespace | lower }}"
+    state: present
+    definition: "{{ lookup('file', 'files/secrets.yml' )}}"
+  register: awx_config_patched
+
+- name: restart awx pod if configuration changed
+  shell: kubectl  delete pod -n awx -l control-plane=controller-manager
+  when: 
+    - awx_config_patched.changed
+
+- name: create awx operator config
+  kubernetes.core.k8s:
+    state: present
+    template:
+      - path: 'awx.yml.j2'
+      - path: 'awx-postgresql.yml.j2'
+      - path: 'awx-secret.yml.j2'

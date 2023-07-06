@@ -1,0 +1,7 @@
+---
+
+- import_tasks: common.yml
+  when: ansible_os_family == "Debian"
+
+- import_tasks: configure.yml
+  when: (hacluster_configure | bool) and (ansible_os_family == "Debian")

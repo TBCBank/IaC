@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  configManagementPlugins: |-
+    - name: argocd-vault-plugin
+      generate:
+        command: ["argocd-vault-plugin"]
+        args: ["generate", "-s", "{{ k8s_argocd.namespace }}:argocd-vault-plugin-credentials", "./"]
+  url: "{{ k8s_argocd_url }}"

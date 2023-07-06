@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  roles:
+    - awx-operator
+  environment:
+    K8S_AUTH_KUBECONFIG: ~/.kube/config
+  vars:
+    k8s_awx:
+      name: dev
+      namespace: awx
+      spec:
+        service_type: ClusterIP
+        ingress_type: ingress
+        ipv6_disabled: "true"
+        hostname: awx.example.com
+        ingress_tls_secret: star-example-com
+        admin_user: admin
+        admin_email: admin@example.com
+        admin_password_secret: awx-admin-password
+        postgres_configuration_secret: awx-postgres-configuration
+
+    # awx secrets variables
+    k8s_awx_secrets:
+      postgres_name: awx-postgres-configuration
+      postgres_stringdata:
+        database_host: 10.10.10.10
+        database_port: 5432
+        database_name: postgres
+        database_username: postgres
+        database_ssl: prefer
+      admin_name: awx-admin-password
+    k8s_awx_secrets_admin_password: "StrongPassword"
+    k8s_awx_secrets_database_password: "StrongPassword"

@@ -1,0 +1,6 @@
+---
+
+- name: metallb
+  src: git@gitlab.example.com:iac/ansible/roles/metallb.git
+  scm: git
+  version: "1.0.0"

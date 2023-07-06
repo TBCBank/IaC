@@ -1,0 +1,16 @@
+---
+
+- name: awx-operator
+  src: git@gitlab.example.com:iac/ansible/roles/awx-operator.git
+  scm: git
+  version: "1.0.0"
+
+- name: baselinux
+  src: git@gitlab.example.com:iac/ansible/roles/baselinux.git
+  scm: git
+  version: "1.0.0"
+
+- name: postgresql
+  src: git@gitlab.example.com:iac/ansible/roles/postgresql.git
+  scm: git
+  version: "1.0.0"

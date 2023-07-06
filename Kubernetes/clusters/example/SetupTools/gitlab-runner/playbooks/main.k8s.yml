@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  roles:
+    - k8s-gitlab-runner
+  environment:
+    K8S_AUTH_KUBECONFIG: ~/.kube/config
+  vars:
+    k8s_gitlab_runner:
+      name: dev
+      namespace: gitlab-runner
+      registration:
+        url: https://gitlab.example.com/
+        token: "UWEsvsibR1_w_hKPuvuR"
+        secretname: gitlab.example.com.crt
+        rbac:
+          create: false
+          clusteraccess: true
+        runners:
+          executor: kubernetes
+          tags: "dev,kubernetes"

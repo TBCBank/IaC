@@ -1,0 +1,14 @@
+image:
+  registry: registry.gitlab.com
+  image: gitlab-org/gitlab-runner
+imagePullPolicy: IfNotPresent
+gitlabUrl: {{ k8s_gitlab_runner.registration.url }}
+runnerRegistrationToken: {{ k8s_gitlab_runner.registration.token }}
+certsSecretName: {{ k8s_gitlab_runner.registration.secretname }}
+rbac:
+  create: {{ k8s_gitlab_runner.registration.rbac.create }}
+  clusterWideAccess: {{ k8s_gitlab_runner.registration.rbac.clusteraccess }}
+runners:
+  executor: {{ k8s_gitlab_runner.registration.runners.executor }}
+  secret: gitlab-runner
+  tags: {{ k8s_gitlab_runner.registration.runners.tags }}

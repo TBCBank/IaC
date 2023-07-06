@@ -1,0 +1,23 @@
+---
+
+- name: add metrics-server stable chart repo
+  kubernetes.core.helm_repository:
+    name: "{{ k8s_metrics_server.name }}"
+    repo_url: "https://kubernetes-sigs.github.io/metrics-server/"
+
+- name: update repo cache
+  shell: helm repo update
+
+- name: deploy metrics-server
+  kubernetes.core.helm:
+    name: "{{ k8s_metrics_server.name }}"
+    chart_ref: metrics-server/metrics-server
+    release_name: "{{ k8s_metrics_server.name }}"
+    release_namespace: "{{ k8s_metrics_server.namespace }}"
+    create_namespace: true
+    update_repo_cache: true
+    replace: true
+    state: "{{ k8s_metrics_server_state }}"
+    release_state: "{{ k8s_metrics_server_state }}"
+    wait: true
+    values: "{{ lookup('template', 'metrics-server-values.yml.j2') | from_yaml }}"

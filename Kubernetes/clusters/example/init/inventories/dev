@@ -1,0 +1,22 @@
+all:
+  children:
+    dev_k8s:
+      children:
+        dev_k8s_node:
+          children:
+            dev_k8s_masters:
+              hosts:
+                dev-k8s-master01.example.com:
+                  kubernetes_init: true
+                  kubernetes_cilium_init: true
+                dev-k8s-master02.example.com:
+                dev-k8s-master03.example.com:
+            dev_k8s_workers:
+              hosts:
+                dev-k8s-worker01.example.com:
+                dev-k8s-worker02.example.com:
+        dev_k8s_api_lb:
+          hosts:
+            dev-k8s-lb01.example.com:
+              hacluster_configure: yes
+            dev-k8s-lb02.example.com:

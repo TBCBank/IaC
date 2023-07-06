@@ -1,0 +1,74 @@
+---
+
+- name: configure logrotate of syslog
+  template:
+    src: templates/logrotate_syslog.j2
+    dest: /etc/logrotate.d/rsyslog
+
+- name: modify bashrc
+  template:
+    src: templates/bashrc.j2
+    dest: /etc/bash.bashrc
+
+- name: service apparmor stop & disable 
+  systemd:
+    name: apparmor
+    state: stopped
+    enabled: false
+
+- name: ufw disable 
+  ufw:
+    state: "{{ baselinux.ufw.mode }}"
+    policy: allow
+  become: true
+
+- name: copy ca certs
+  copy:
+    src: "{{ item }}"
+    dest: /usr/local/share/ca-certificates/
+  with_fileglob:
+    - files/certs/*
+
+- name: extract certificates
+  shell: update-ca-certificates && c_rehash
+  become: true
+
+- name: add apt proxy
+  template:
+    src: templates/apt_proxy.conf.j2
+    dest: /etc/apt/apt.conf.d/proxy.conf
+  when: baselinux.proxy.apt|bool
+
+- name: find default repos
+  find:
+    paths: /etc/apt/sources.list.d/
+    excludes: "{{ baselinux.repo.default }}"
+  register: default_repos_debian_sources_d
+  when: baselinux_delete_default_repos|bool
+
+- name: delete default repos in in sources.d
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ default_repos_debian_sources_d.files }}"
+
+- name: custom repos 
+  apt_repository:
+    repo: deb https://{{ baselinux.repo.server }}/repository/{{ item }}
+    state: present
+    filename: "companyname-artifactory"
+  with_items:
+    - "{{ baselinux.repo.debian.ubuntu }}"
+
+- name: install baselinux packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "{{ baselinux.packages.common }}"
+    - "{{ baselinux.packages.apt }}"
+
+- name: configure locale
+  shell: localedef -c -i en_US -f UTF-8 en_US.UTF-8 && locale -a
+  args:
+    executable: /bin/bash

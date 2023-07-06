@@ -1,0 +1,80 @@
+---
+baselinux_delete_default_repos: true
+
+root_password: "StrongPassword"
+
+baselinux:
+  timezone: "Asia/Tbilisi"
+  hostname: "{{ inventory_hostname }}"
+  selinux:
+    mode: "permissive"
+  ufw: 
+    mode: "disabled"
+  motd:
+    location: "/etc/update-motd.d/"
+    name: motd
+  sshd:
+    port: "22"
+    logingracetime: "60m"
+    permitrootlogin: "yes"
+    maxauthtries: "6"
+    pubkeyauthentication: "yes"
+    passwordauthentication: "yes"
+    banner: "/etc/ssh/banner"
+  ssh:
+    stricthostkeychecking: "no"
+    userknownhostsfile: "~/.ssh/known_hosts"
+  proxy:
+    apt: false
+    server: "proxy.example.com"
+    port: "3128"
+    protocol:
+      http: "http"
+      https: "https"
+  repo:
+    delete_default: true
+    server: "repository.example.com"
+    default:
+      - company-*.repo
+      - company-*.list
+    rhel8:
+      - rpm-rhel8-epel-remote
+    rhel7:
+      - rpm-rhel7-epel-remote
+    debian:
+      ubuntu:
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-security multiverse
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }} universe
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }} main restricted
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-updates main restricted
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-security universe
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-updates universe
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }} multiverse
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-updates multiverse
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-backports main restricted universe multiverse
+        - debian-ubuntu-base-remote {{ ansible_distribution_release }}-security main restricted
+  packages:
+    common:
+      - vim
+      - mc
+      - tree
+      - wget
+      - bash-completion
+      - ca-certificates
+      - sysstat
+      - unzip
+      - htop
+      - iotop
+      - lsof
+      - strace
+      - traceroute
+      - tcpdump
+    yum:
+      - nfs-utils
+    apt:
+      - nfs-common
+      - locales
+      - software-properties-common
+      - pip
+      - cron
+      - less

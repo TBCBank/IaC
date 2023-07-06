@@ -1,0 +1,7 @@
+---
+## options "present" or "absent"
+k8s_metrics_server_state: present
+
+k8s_metrics_server:
+  name: metrics-server
+  namespace: kube-system

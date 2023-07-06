@@ -1,0 +1,63 @@
+---
+
+- name: create pgpass file
+  template:
+    src: templates/pgpass.j2
+    dest: "{{ postgresql_base_dir }}/.pgpass"
+    owner: postgres
+    group: postgres
+    mode: 0600
+
+- name: replicate database cluster from master
+  command: "/usr/lib/postgresql/13/bin/pg_basebackup -P -R -X stream -c fast -h {{ postgresql_master_host }} -U postgres -D {{ postgresql_replica_data_dir }}"
+  become: true
+  become_user: postgres
+  args:
+    creates: "{{ postgresql_data_dir }}/recovery.conf"
+
+- name: modify postgresql.conf
+  template:
+    src: templates/postgresql.conf.j2
+    dest: "{{ postgresql_data_dir }}/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: 0660
+  notify:
+    - restart postgresql
+
+- name: modify pg_hba.conf
+  template:
+    src: templates/pg_hba.conf.j2
+    dest: "{{ postgresql_data_dir }}/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: 0660
+  notify:
+    - restart postgresql
+
+- name: create log directory
+  file:
+    path: "{{ postgresql_log_directory }}"
+    state: directory
+    owner: postgres
+    group: postgres
+
+- name: modify postgresql.conf
+  template:
+    src: templates/postgresql.conf.j2
+    dest: "{{ postgresql_data_dir }}/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: 0660
+  notify:
+    - restart postgresql
+
+- name: start postgresql
+  systemd:
+    name: postgresql
+    state: started
+
+- name: enable postgresql
+  systemd:
+    name: postgresql
+    enabled: yes

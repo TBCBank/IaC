@@ -1,0 +1,15 @@
+{{ ansible_managed | comment }}
+
+{% if nginx_config.stream.upstreams is defined %}
+{% for upstream in nginx_config.stream.upstreams %}
+upstream {{ upstream.upstream }} {
+{% if upstream.strategy is defined %}
+{{ upstream.strategy | indent( width = 4, first = true ) }};
+{% endif %}
+{% for server in upstream.servers %}
+    server {{ server }}:{{ upstream.port }} max_fails={{ upstream.max_fails }} fail_timeout={{ upstream.fail_timeout }};
+{% endfor %}
+}
+{% endfor %}
+{% endif %}
+

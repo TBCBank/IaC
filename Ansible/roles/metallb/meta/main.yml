@@ -1,0 +1,10 @@
+galaxy_info:
+  author: Giorgi Katcharava, Mate Gogiberidze, Aleksandre Kvaichadze, Nika Kostava, Saba Sakvarelidze, Davit Gogritchiani, Davit Samadashvili
+  description: Provisions metallb on Kubernetes.
+
+  min_ansible_version: 2.4
+
+  platforms:
+  - name: Kubernetes
+    versions:
+    - 1.25.3

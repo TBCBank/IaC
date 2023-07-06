@@ -1,0 +1,39 @@
+---
+
+- name: copy nginx gpg
+  copy:
+    src: files/nginx.gpg
+    dest: /tmp/{{ nginx_keyring }}
+
+- name: add nginx gpg to keyring
+  apt_key:
+    file: /tmp/{{ nginx_keyring }}
+    keyring: "{{ nginx_keyring_path }}"
+    state: present
+
+- name: add nginx repo
+  apt_repository:
+    repo: deb [arch=amd64 signed-by={{ nginx_keyring_path }}] https://{{ baselinux_repo_server }}/repository/{{ item }} jammy nginx
+    state: present
+    filename: "copmanyname-nginx"
+  with_items:
+    - "{{ nginx_repo }}"
+
+- name: install nginx
+  apt:
+    name: nginx={{ nginx_version }}
+    state: present
+    policy_rc_d: 101
+    allow_change_held_packages: true
+
+- name: hold nginx version
+  dpkg_selections:
+    name: nginx
+    selection: hold
+
+- name: install nginx dynamic modules
+  apt:
+    name: "{{ nginx_modules }}"
+    state: present
+  when: 
+    - (nginx_modules is defined) and (nginx_modules|length > 0)

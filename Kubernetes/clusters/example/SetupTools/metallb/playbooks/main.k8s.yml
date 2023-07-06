@@ -1,0 +1,9 @@
+---
+
+- hosts: localhost
+  roles:
+    - metallb
+  environment:
+    K8S_AUTH_KUBECONFIG: ~/.kube/config
+  vars:
+    k8s_metallb_ip_pool: 10.20.30.40-10.20.30.45

@@ -1,0 +1,77 @@
+---
+
+- name: configure logrotate of syslog
+  template:
+    src: templates/logrotate_syslog.j2
+    dest: /etc/logrotate.d/syslog
+
+- name: modify bashrc
+  template:
+    src: templates/bashrc.j2
+    dest: /etc/bashrc
+
+- name: selinux permissive
+  selinux:
+    policy: targeted
+    state: "{{ baselinux.selinux.mode }}"
+
+- name: enable dynamic ca configuration feature
+  shell: update-ca-trust force-enable
+
+- name: copy ca certs
+  copy:
+    src: "{{ item }}"
+    dest: /etc/pki/ca-trust/source/anchors/
+  with_fileglob:
+    - files/certs/*
+
+- name: extract certificates
+  shell: update-ca-trust extract
+
+- name: find default repos
+  find:
+    paths: /etc/yum.repos.d
+    excludes: "{{ baselinux.repo.default }}"
+  register: default_repos_rhel_repos_d
+  when: baselinux_delete_default_repos|bool
+
+- name: delete default repos
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ default_repos_rhel_repos_d.files }}"
+  when: baselinux_delete_default_repos|bool
+
+- name: configure custom repos rhel8
+  yum_repository:
+    name: "{{ item }}"
+    description: "{{ item }}"
+    baseurl: "https://{{ baselinux.repo.server }}/repository/{{ item }}"
+    gpgcheck: no
+    file: companyname-artifactory
+  with_items:
+    - "{{ baselinux.repo.rhel8 }}"
+  when:
+    - baselinux_delete_default_repos|bool
+    - ansible_distribution_major_version == "8"
+
+- name: configure custom repos rhel7
+  yum_repository:
+    name: "{{ item }}"
+    description: "{{ item }}"
+    baseurl: "https://{{ baselinux.repo.server }}/repository/{{ item }}"
+    gpgcheck: no
+    file: companyname-artifactory
+  with_items:
+    - "{{ baselinux.repo.rhel7 }}"
+  when:
+    - baselinux_delete_default_repos|bool
+    - ansible_distribution_major_version == "7"
+
+- name: install baselinux packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - "{{ baselinux.packages.common }}"
+    - "{{ baselinux.packages.yum }}"

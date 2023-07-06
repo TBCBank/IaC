@@ -1,0 +1,108 @@
+---
+
+- name: create a nginx.service.d directory if not exist
+  file:
+    path: /etc/systemd/system/nginx.service.d
+    state: directory
+
+- name: create a var/www directory if not exist
+  file:
+    path: /var/www
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+
+- name: modify limits for nginx
+  copy:
+    src: files/override.conf
+    dest: /etc/systemd/system/nginx.service.d/override.conf
+
+- name: modify logrotate for nginx
+  copy:
+    src: files/logrotate/nginx
+    dest: /etc/logrotate.d/nginx
+
+- name: create directory for ssl files
+  file:
+    path: "/etc/nginx/ssl/"
+    state: directory
+
+- name: copy ssl files
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/ssl/"
+  with_fileglob:
+    - files/ssl/*
+
+- name: find nginx files
+  find:
+    paths: /etc/nginx/conf.d/
+    patterns: "*"
+  register: nginx_files
+
+- name: clean nginx files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ nginx_files.files }}"
+  notify: 
+    - test nginx
+    - reload nginx
+
+- name: delete sites-availabe/enabled folders
+  ansible.builtin.file:
+    path: /etc/nginx/{{ item }}
+    state: absent
+  with_items: 
+    - sites-available
+    - sites-enabled
+  notify: 
+    - test nginx
+    - reload nginx
+
+- name: modify nginx main config file
+  template:
+    src: templates/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+  notify: 
+  - test nginx
+  - reload nginx
+
+- name: modify nginx http servers
+  template:
+    src: templates/http_server.conf.j2
+    dest: "/etc/nginx/conf.d/{{ item.name }}.conf"
+  with_items: "{{ nginx_config.http.servers }}"
+  when: (nginx_config.http is defined) and (nginx_config.http.servers|length > 0)
+  notify: 
+    - test nginx
+    - reload nginx
+
+- name: modify nginx stream servers
+  template:
+    src: templates/stream_server.conf.j2
+    dest: "/etc/nginx/conf.d/{{ item.name }}.conf"
+  with_items: "{{ nginx_config.stream.servers }}"
+  when: (nginx_config.stream is defined) and (nginx_config.stream.servers|length > 0)
+  notify: 
+    - test nginx
+    - reload nginx
+
+- name: modify nginx http upstreams
+  template:
+    src: templates/http_upstreams.j2
+    dest: /etc/nginx/conf.d/http_upstreams
+  when: (nginx_config.http.upstreams is defined) and (nginx_config.http.upstreams|length > 0)
+  notify: 
+    - test nginx
+    - reload nginx
+
+- name: modify nginx stream upstreams
+  template:
+    src: templates/stream_upstreams.j2
+    dest: /etc/nginx/conf.d/stream_upstreams
+  when: (nginx_config.stream.upstreams is defined) and (nginx_config.stream.upstreams|length > 0)
+  notify: 
+    - test nginx
+    - reload nginx

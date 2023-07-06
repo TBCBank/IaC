@@ -1,0 +1,6 @@
+---
+- hosts: localhost
+  roles:
+    - nginx-ingress
+  environment:
+    K8S_AUTH_KUBECONFIG: ~/.kube/config

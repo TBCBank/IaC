@@ -1,0 +1,34 @@
+---
+
+- name: kubeadm pull images
+  shell: kubeadm config images pull > {{ kubernetes_outputs_dir }}/config_images_pull
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/config_images_pull"
+
+- name: upload certificates/renew certificate key
+  shell: kubeadm init phase upload-certs --upload-certs --certificate-key {{ kubernetes_certificate_key }}
+  when: kubernetes_init
+
+- name: join cluster as master
+  shell: |
+          kubeadm join {{ kubernetes_control_endpoint_address }}:{{ kubernetes_control_endpoint_port }} \
+          --token {{ kubernetes_token }} \
+          --discovery-token-unsafe-skip-ca-verification \
+          --apiserver-advertise-address {{ kubernetes_apiserver_advertise_address }} \
+          --apiserver-bind-port {{ kubernetes_apiserver_advertise_port }} \
+          --control-plane \
+          --certificate-key {{ kubernetes_certificate_key }} > {{ kubernetes_outputs_dir }}/join_cluster
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/join_cluster"
+  when: not kubernetes_init
+
+- name: create kubeconfig dir
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+
+- name: copy admin.conf to kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    remote_src: yes

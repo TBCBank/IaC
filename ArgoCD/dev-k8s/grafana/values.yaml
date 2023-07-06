@@ -1,0 +1,17 @@
+nameOverride: dev-k8s
+namespaceOverride: grafana
+## Configuration for Grafana
+grafana:
+  enabled: true
+  namespaceOverride: grafana
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    hosts:
+      - grafana.example.com
+    path: /
+    tls:
+    - secretName: star-example-com
+      hosts:
+        - grafana.example.com

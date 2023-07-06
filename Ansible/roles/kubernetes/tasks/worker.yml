@@ -1,0 +1,9 @@
+---
+
+- name: join cluster as worker
+  shell: |
+          kubeadm join {{ kubernetes_control_endpoint_address }}:{{ kubernetes_control_endpoint_port }} \
+                       --token {{ kubernetes_token }} \
+                       --discovery-token-unsafe-skip-ca-verification > {{ kubernetes_outputs_dir }}/join_cluster
+  args:
+    creates: "{{ kubernetes_outputs_dir }}/join_cluster"

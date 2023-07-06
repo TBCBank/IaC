@@ -1,0 +1,21 @@
+---
+
+- name: delete nginx-ingress chart
+  kubernetes.core.helm:
+    name: "{{ k8s_nginx.name }}"
+    chart_ref: nginx-stable/nginx-ingress
+    release_namespace: "{{ k8s_nginx.namespace }}"
+    create_namespace: true
+    force: true
+    wait: true
+    state: "{{ k8s_nginx_state }}"
+    values_files:
+      - /tmp/nginx-values.yml
+    kubeconfig: ~/.kube/config
+
+- name: delete nginx-ingress namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_nginx.namespace | lower}}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_nginx_state }}"

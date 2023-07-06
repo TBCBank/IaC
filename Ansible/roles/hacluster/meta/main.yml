@@ -1,0 +1,10 @@
+galaxy_info:
+  author: Giorgi Katcharava, Mate Gogiberidze, Aleksandre Kvaichadze, Nika Kostava, Saba Sakvarelidze, Davit Gogritchiani, Davit Samadashvili
+  description: Provisions hacluster on Ubuntu 22.04.
+
+  min_ansible_version: 2.4
+
+  platforms:
+  - name: Ubuntu
+    versions:
+    - 22.04

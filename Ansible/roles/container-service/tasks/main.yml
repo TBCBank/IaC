@@ -1,0 +1,87 @@
+---
+
+- name: add docker gpg to keyring
+  apt_key:
+    url: https://{{ baselinux_repo_server }}/repository/{{ container_service_repo }}/gpg
+    keyring: "{{ container_service_gpg_path }}"
+    state: present
+
+- name: add container repo
+  apt_repository:
+    repo: deb [arch=amd64 signed-by={{ container_service_gpg_path }}] https://{{ baselinux_repo_server }}/repository/{{ container_service_repo }} jammy stable
+    state: present
+    filename: "companyname-container"
+
+- name: install docker
+  apt:
+    name: "{{ container_service_docker }}"
+    state: present
+    allow_change_held_packages: true
+  when: container_service == "docker"
+
+- name: install containerd
+  apt:
+    name: "{{ container_service_containerd }}"
+    state: present
+    allow_change_held_packages: true
+  when: container_service == "containerd"
+
+- name: hold container service version
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  with_items:
+    - containerd.io
+    - docker-ce
+    - docker-ce-cli
+
+- name: create docker serviced folder
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    recurse: yes
+  when: container_service == "docker"
+  
+- name: configure docker proxy
+  template:
+    src: templates/http_proxy.conf.j2
+    dest: /etc/systemd/system/docker.service.d/http_proxy.conf
+  register: docker_serviced
+  when: 
+    - container_service_proxy_enabled|bool
+    - container_service == "docker"
+
+- name: restart docker
+  systemd:
+    name: docker
+    state: restarted
+    daemon_reload: yes
+  when: 
+    - container_service == "docker"
+    - docker_serviced.changed
+
+
+- name: create containerd serviced folder
+  file:
+    path: /etc/systemd/system/containerd.service.d
+    state: directory
+    recurse: yes
+  when: container_service == "containerd"
+  
+- name: configure containerd proxy
+  template:
+    src: templates/http_proxy.conf.j2
+    dest: /etc/systemd/system/containerd.service.d/http-proxy.conf
+  register: containerd_serviced
+  when: 
+    - container_service_proxy_enabled|bool
+    - container_service == "containerd"
+
+- name: restart containerd
+  systemd:
+    name: containerd
+    state: restarted
+    daemon_reload: yes
+  when: 
+    - container_service == "containerd"
+    - containerd_serviced.changed

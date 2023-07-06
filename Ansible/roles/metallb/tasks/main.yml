@@ -1,0 +1,32 @@
+---
+
+- name: add metallb helm repository
+  kubernetes.core.helm_repository:
+    name: metallb
+    state: present
+    repo_url: "https://metallb.github.io/metallb"
+  tags:
+    - metallb
+
+- name: install metallb using helm
+  kubernetes.core.helm:
+    release_name: metallb
+    chart_ref: metallb/metallb
+    namespace: "{{ k8s_metallb_namespace }}"
+    wait: true
+    create_namespace: true
+    force: true
+    state: "{{ k8s_metallb_state }}"
+  register: metallb_helm_chart_installed
+  until: metallb_helm_chart_installed is succeeded
+  tags:
+    - metallb
+
+- name: create metallb ipaddress pool
+  kubernetes.core.k8s:
+    state: "{{ k8s_metallb_state }}"
+    template:
+      - path: 'ipaddresspool.yml.j2'
+  when: metallb_helm_chart_installed is succeeded
+  tags:
+    - metallb

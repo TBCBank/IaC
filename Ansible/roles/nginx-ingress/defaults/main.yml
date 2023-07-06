@@ -1,0 +1,21 @@
+---
+
+
+## options "present" or "absent"
+k8s_nginx_state: present
+
+k8s_nginx:
+  name: nginx-ingress
+  namespace: nginx-ingress
+  image:
+    tag: 3.1.1
+  kind: daemonset
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  service:
+    type: LoadBalancer

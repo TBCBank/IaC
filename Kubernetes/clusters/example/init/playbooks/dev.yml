@@ -1,0 +1,16 @@
+---
+
+- hosts: all 
+  strategy: free
+  roles:
+    - baselinux
+
+- hosts: dev_k8s_api_lb
+  roles:
+    - hacluster
+    - nginx
+
+- hosts: dev_k8s_node
+  roles:
+    - container-service
+    - kubernetes

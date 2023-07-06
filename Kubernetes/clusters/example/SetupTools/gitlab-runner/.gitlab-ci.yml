@@ -1,0 +1,40 @@
+stages:
+  - present
+  - absent
+
+variables:
+  MASTER_HOST: dev-k8s-master01.example.com
+  K8S_CONFIG_FILE_PATH: /home/gitlab-runner/.kube/config
+  STATE: k8s_gitlab_runner_state
+
+apply:
+  stage: present
+  before_script:
+    - scp root@$MASTER_HOST:/etc/kubernetes/admin.conf $K8S_CONFIG_FILE_PATH
+    - rm -rf ~/.ansible/roles/*
+  script:
+    - ansible-galaxy install --role-file roles/requirements.yml
+    - ansible-playbook -i inventories/main.k8s.yml playbooks/main.k8s.yml --vault-id iac@$ANSIBLE_VAULT_PASSWORD -e $STATE=present
+    - rm -rf $K8S_CONFIG_FILE_PATH
+  when: manual
+  only:
+    - main
+  tags:
+    - shell
+    - dev
+
+delete:
+  stage: absent
+  before_script:
+    - scp root@$MASTER_HOST:/etc/kubernetes/admin.conf $K8S_CONFIG_FILE_PATH
+    - rm -rf ~/.ansible/roles/*
+  script:
+    - ansible-galaxy install --role-file roles/requirements.yml
+    - ansible-playbook -i inventories/main.k8s.yml playbooks/main.k8s.yml -e $STATE=absent
+    - rm -rf $K8S_CONFIG_FILE_PATH
+  when: manual
+  only:
+    - main
+  tags:
+    - shell
+    - dev

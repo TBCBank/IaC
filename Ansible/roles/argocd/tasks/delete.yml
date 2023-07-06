@@ -1,0 +1,16 @@
+---
+
+- name: delete argocd
+  kubernetes.core.k8s:
+    name: "{{ k8s_argocd.namespace | lower }}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_argocd_state }}"
+    wait: yes
+
+- name: delete argocd namespace
+  kubernetes.core.k8s:
+    name: "{{ k8s_argocd.namespace | lower}}"
+    api_version: v1
+    kind: Namespace
+    state: "{{ k8s_argocd_state }}"

@@ -1,0 +1,37 @@
+apiVersion: v1
+data:
+  exec.enabled: "false"
+  timeout.reconciliation: 60s
+  server.rbac.log.enforce.enable: "false"
+  admin.enabled: "{{ k8s_argocd_admin }}"
+  url: {{ k8s_argocd_url }}
+  dex.config: |
+    connectors:
+    - type: ldap
+      name: {{ k8s_argocd_ldap.name }}
+      id: ldap
+      config:
+        # Ldap server address
+        host: "{{ k8s_argocd_ldap.host }}"
+        insecureNoSSL: true
+        insecureSkipVerify: true
+        # Variable name stores ldap bindDN in argocd-secret
+        bindDN: "$dex.ldap.bindDN"
+        # Variable name stores ldap bind password in argocd-secret
+        bindPW: "$dex.ldap.bindPW"
+        usernamePrompt: Username
+        # Ldap user search attributes
+        userSearch:
+          baseDN: "{{ k8s_argocd_ldap.usersearch.basedn }}"
+          filter: ""
+          username: sAMAccountName
+          idAttr: distinguishedName
+          emailAttr: "{{ k8s_argocd_ldap.usersearch.emailattr }}"
+          nameAttr: displayName
+        # Ldap group search attributes
+        groupSearch:
+          baseDN: "{{ k8s_argocd_ldap.groupsearch.basedn }}"
+          filter: ""
+          userAttr: DN
+          groupAttr: member
+          nameAttr: cn

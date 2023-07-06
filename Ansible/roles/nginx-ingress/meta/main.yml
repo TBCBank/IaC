@@ -1,0 +1,10 @@
+galaxy_info:
+  author: Giorgi Katcharava, Mate Gogiberidze, Aleksandre Kvaichadze, Nika Kostava, Saba Sakvarelidze, Davit Gogritchiani, Davit Samadashvili
+  description: Provisions Nginx on Kubernetes.
+
+  license: BSD
+
+  min_ansible_version: 2.4
+
+  platforms:
+  - name: Kubernetes

@@ -1,0 +1,6 @@
+---
+
+- name: metrics-server
+  src: git@gitlab.example.com:iac/ansible/roles/metrics-server.git
+  scm: git
+  version: "1.0.0"

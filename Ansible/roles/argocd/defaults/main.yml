@@ -1,0 +1,44 @@
+---
+# options "present" or "absent"
+k8s_argocd_state: present
+
+## LDAP config in argocd configmap
+k8s_argocd_admin: false
+k8s_argocd_url: https://argocd.example.com
+## PLUGIN config in argocd configmap
+k8s_argocd_plugins:
+  secret:
+    vault_addr: https://vault.example.com
+    vault_token: hvs.CAESIPMyVHyCGxHDYtg_NbRF9qvCbGYRW1-4bw3fp_X598yvGh4KHGh2cy5ZbDRKNzRBdjk1aHowY2tIckJsMHZneGY
+    avp_type: vault
+    avp_auth_type: userpass
+    avp_username: argocd
+    avp_password: wbipzp12n3lo3une
+
+k8s_argocd_ldap:
+  name: ldap.example.com
+  host: ldap.example.com:389
+  usersearch:
+    basedn: DC=example,DC=com
+    emailattr: mail
+  groupsearch: 
+    basedn: DC=example,DC=com
+k8s_argocd_dex_ldap_bindpw: "StrongPassword"
+k8s_argocd_dex_ldap_binddn: "StrongPassword"
+
+## RBAC config for argocd
+k8s_argocd:
+  namespace: argocd
+  policy:
+    admins:
+      - CloudPlatforms
+    readonlies:
+      - devops
+      - AppAdmins
+      - VPN_admins
+  ingress:
+    spec:
+      host: argocd.example.com
+      tls:
+        secret: star-example-com
+

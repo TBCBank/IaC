@@ -1,0 +1,10 @@
+---
+
+- import_tasks: install.yml
+  when: ansible_os_family == "Debian"
+
+- import_tasks: master.yml
+  when: (postgresql_mode == "master") and (ansible_os_family == "Debian")
+
+- import_tasks: slave.yml
+  when: (postgresql_mode == "slave") and (ansible_os_family == "Debian")

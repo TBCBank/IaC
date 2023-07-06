@@ -1,0 +1,43 @@
+#jinja2: lstrip_blocks:True
+---
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: {{ k8s_awx.name }}
+  namespace: {{ k8s_awx.namespace }}
+spec:
+  replicas: {{ k8s_awx_replicas }}
+  service_type: {{ k8s_awx.spec.service_type }}
+  ipv6_disabled: {{ k8s_awx.spec.ipv6_disabled }}
+  ingress_type: {{ k8s_awx.spec.ingress_type }}
+  hostname: {{ k8s_awx.spec.hostname }}
+  ingress_tls_secret: {{ k8s_awx.spec.ingress_tls_secret }}
+  admin_user: {{ k8s_awx.spec.admin_user }}
+  admin_email: {{ k8s_awx.spec.admin_email }}
+  admin_password_secret: {{ k8s_awx.spec.admin_password_secret }}
+  postgres_configuration_secret: {{ k8s_awx.spec.postgres_configuration_secret }}
+  ingress_annotations: |
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  web_resource_requirements:
+    requests:
+      cpu: 250m
+      memory: 2Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+  task_resource_requirements:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  ee_resource_requirements:
+    requests:
+      cpu: 250m
+      memory: 100Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi

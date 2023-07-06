@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+## Colors for script ##
+
+black="\033[0;30m"
+red="\033[0;31m"
+green="\033[0;32m"
+yellow="\033[1;33m"
+blue="\033[0;34m"
+light_purple="\033[1;35m"
+cyan="\033[0;36m"
+white="\033[1;37m"
+
+reset="\033[0m"
+
+## Colors for script - End ##
+
+
+# current date
+date="$(date)"
+
+# Disk mounts
+disk_mounts="$(df -hT | grep -Ev 'devtmpfs|tmpfs|squashfs|overlay')"
+
+# Capture DNS Servers
+dns_servers="$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | tr '\r\n' ' ')"
+
+# Capture Interfaces
+interfaces="$(ip link show | awk -F: '$1>0 {print $2}' | grep -v lo)"
+
+# Using captured interfaces loop through them and capture:
+# link state and ip address
+# Only if IP address is defined
+ips="$(for int in ${interfaces[@]};
+  do
+    state="$(ip link show $int  2> /dev/null | awk '{print $9}')"
+    ip_addr="$(ip -4 add show $int  2> /dev/null | grep inet | awk '{print $2}'| awk -F/ '{print $1}')"
+    if [ ! -z "$ip_addr" ]; then
+      echo "[$int/$state]:" $ip_addr
+    fi
+  done
+)"
+
+# Total CPU
+cpu_total="$(nproc --all)"
+
+# Current CPU Load
+cpu_load="$(cat /proc/loadavg | awk '{print $1*100 "%"}')"
+
+# Total memory
+memory_total="$(free -mh | awk '($1=="Mem:"){memTotal=$2} END{printf  memTotal}')"
+
+# Used memory
+memory_usage="$(free -m | awk '($1=="Mem:"){memTotal=$2; memUsed=$3} END{printf "%.1f%%", memUsed/memTotal * 100}')"
+
+# Used swap memory
+swap_total="$(free -m | awk '($1=="Swap:"){swapTotal=$2} END{printf swapTotal'})"
+if [[ $swap_total -eq 0 ]]; then
+  swap_usage="N/A"
+else
+  swap_usage="$(free -m | awk '($1=="Swap:"){swapTotal=$2; swapUsed=$3} END{printf "%.1f%%", swapUsed/swapTotal * 100}')"
+fi
+
+# Detect OS
+if [ -f /etc/lsb-release ]; then
+  os=$(lsb_release -s -d)
+  elif [ -f /etc/debian_version ]; then
+  os="Debian $(cat /etc/debian_version)"
+  elif [ -f /etc/redhat-release ]; then
+  os=`cat /etc/redhat-release`
+else
+  os="$(uname -s) $(uname -r)"
+fi
+
+# Kernel version
+kernel="$(uname -r)"
+
+# Capture top 5 processes by cpu
+top_processes_cpu="$(ps aux k-pcpu | head -6)"
+
+printf "${cyan}System Information for $HOSTNAME on ${date}\n"
+printf "================================================================================\n"
+
+printf "${white}OS                    :${cyan} %s\n" "${os}"
+printf "${white}Kernel                :${cyan} %s\n" "${kernel}"
+printf "${white}Hostname              :${cyan} %s\n" "$HOSTNAME"
+printf "\n"
+printf "${white}Threads/core          :${cyan} %s\n" "${cpu_total}"
+printf "${white}CPU Load              :${cyan} %s\n" "${cpu_load}"
+printf "\n"
+printf "${white}Memory Total          :${cyan} %s\n" "${memory_total}"
+printf "${white}Memory Usage          :${cyan} %s\n" "${memory_usage}"
+printf "${white}Swap Usage            :${cyan} %s\n" "${swap_usage}"
+printf "\n"
+printf "${white}Disk Mounts           :\n"
+printf "${cyan}%s\n" "${disk_mounts}"
+printf "\n"
+printf "${white}IP Addresses          :\n"
+printf "${cyan}%s\n" "${ips}"
+printf "\n"
+printf "${white}DNS Servers           :${cyan} %s\n" "${dns_servers}"
+printf "\n"
+
+printf "${reset}"
+

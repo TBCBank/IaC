@@ -1,0 +1,40 @@
+{{ ansible_managed | comment }}
+
+/var/log/cron.log
+/var/log/messages
+{% if ansible_os_family == "Debian" %}
+/var/log/syslog
+/var/log/mail.info
+/var/log/mail.warn
+/var/log/mail.err
+/var/log/mail.log
+/var/log/daemon.log
+/var/log/kern.log
+/var/log/auth.log
+/var/log/user.log
+/var/log/lpr.log
+/var/log/debug
+{% endif %}
+{% if ansible_os_family == "RedHat" %}
+/var/log/maillog
+/var/log/secure
+/var/log/spooler
+{% endif %}
+{
+	rotate 7
+	daily
+	missingok
+	notifempty
+	compress
+	delaycompress
+	sharedscripts
+	postrotate
+{% if ansible_os_family == "Debian" %}
+		/usr/lib/rsyslog/rsyslog-rotate
+{% endif %}
+{% if ansible_os_family == "RedHat" %}
+		/usr/bin/systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+{% endif %}
+
+	endscript
+}

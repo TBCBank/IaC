@@ -1,0 +1,53 @@
+---
+
+- name: initialize database cluster
+  command: "{{ postgresql_bin_dir }}/postgresql-{{ postgresql_version }}-setup initdb"
+  args:
+    creates: "{{ postgresql_data_dir }}/postgresql.conf"
+
+- name: create log directory
+  file:
+    path: "{{ postgresql_log_directory }}"
+    state: directory
+    owner: postgres
+    group: postgres
+
+- name: modify postgresql.conf
+  template:
+    src: templates/postgresql.conf.j2
+    dest: "{{ postgresql_data_dir }}/postgresql.conf"
+    owner: postgres
+    group: postgres
+    mode: 0660
+  notify:
+    - restart postgresql
+
+- name: modify pg_hba.conf
+  template:
+    src: templates/pg_hba.conf.j2
+    dest: "{{ postgresql_data_dir }}/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: 0660
+  notify:
+    - restart postgresql
+
+- name: start postgresql {{ postgresql_version }}
+  systemd:
+    name: postgresql@{{ postgresql_version }}-main
+    state: started
+
+- name: enable postgresql {{ postgresql_version }}
+  systemd:
+    name: postgresql@{{ postgresql_version }}-main
+    enabled: true
+
+- name: modify postgres db user password
+  command: psql -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '{{ postgresql_password }}';"
+  become: true
+  become_user: postgres
+
+- name: create test file for postgres password change
+  file:
+    path: "{{ postgresql_base_dir }}/postgres_password.test"
+    state: touch

@@ -1,0 +1,17 @@
+---
+## options "present" or "absent"
+k8s_gitlab_runner_state: present
+
+k8s_gitlab_runner:
+  name: companyname
+  namespace: gitlab-runner
+  registration:
+    url: https://gitlab.example.com/
+    token: "TXEajk2qohDDDjj37ExT"
+    secretname: gitlab.example.com.crt
+    rbac:
+      create: false
+      clusteraccess: true
+    runners:
+      executor: kubernetes
+      tags: "kubernetes,containerd,ubuntu"

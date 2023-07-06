@@ -1,0 +1,10 @@
+---
+
+- import_tasks: install.yml
+  when: ansible_os_family == "Debian"
+
+- import_tasks: configure.yml
+  when: ansible_os_family == "Debian"
+
+- import_tasks: service.yml
+  when: ansible_os_family == "Debian"

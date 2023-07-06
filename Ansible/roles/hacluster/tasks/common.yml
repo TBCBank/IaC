@@ -1,0 +1,35 @@
+---
+
+- name: create folder for hacluster outputs
+  file:
+    path: "{{ hacluster_outputs_dir }}"
+    state: directory
+    recurse: yes
+
+- name: install hacluster packages
+  apt:
+    name:
+      - corosync
+      - pacemaker
+      - pcs
+      - resource-agents
+    state: present
+
+- name: enable hacluster services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+  with_items:
+    - pcsd
+    - corosync
+    - pacemaker
+
+- name: start pcsd
+  systemd:
+    name: pcsd
+    state: started
+
+- name: set hacluster password
+  shell: echo 'hacluster:{{ hacluster_passwd }}' | chpasswd  > {{ hacluster_outputs_dir }}/hacluster_passwd
+  args:
+    creates: "{{ hacluster_outputs_dir }}/hacluster_passwd"

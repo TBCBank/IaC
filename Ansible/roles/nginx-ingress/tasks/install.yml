@@ -1,0 +1,23 @@
+---
+
+- name: add nginx-ingress stable chart repo
+  kubernetes.core.helm_repository:
+    name: nginx
+    repo_url: "https://helm.nginx.com/stable"
+
+- name: update repo cache
+  shell: helm repo update
+
+- name: deploy nginx-ingress chart inside {{ k8s_nginx.namespace }} namespace
+  kubernetes.core.helm:
+    name: "{{ k8s_nginx.name }}"
+    chart_ref: nginx/nginx-ingress
+    release_name: "{{ k8s_nginx.name }}"
+    release_namespace: "{{ k8s_nginx.namespace }}"
+    create_namespace: true
+    update_repo_cache: true
+    force: true
+    wait: true
+    release_state: "{{ k8s_nginx_state }}"
+    state: "{{ k8s_nginx_state }}"
+    values: "{{ lookup('template', 'nginx-values.yml.j2') | from_yaml }}"

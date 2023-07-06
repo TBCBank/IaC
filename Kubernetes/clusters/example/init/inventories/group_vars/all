@@ -1,0 +1,4 @@
+---
+
+baselinux_repo_server: "repository.example.com"
+baselinux.proxy.apt: false

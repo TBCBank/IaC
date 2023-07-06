@@ -1,0 +1,48 @@
+---
+
+# Kubernetes common
+kubernetes_repo: "debian-ubuntu-kubernetes-remote"
+kubernetes_keyring: "kubernetes-archive-keyring.gpg"
+kubernetes_keyring_path:  "/etc/apt/keyrings/{{ kubernetes_keyring }}"
+kubernetes_outputs_folder: "k8s_outputs"
+kubernetes_outputs_dir: "{{ ansible_env.HOME }}/{{ kubernetes_outputs_folder }}"
+
+# Kubernetes Phases
+kubernetes_init: false
+kubernetes_master: false
+kubernetes_worker: false
+kubernetes_upgrade: false
+
+# Kubernetes Network Provider Selection
+kubernetes_network_provider: cilium # calico
+kubernetes_cilium_init: false
+
+# Kubernetes Nodes
+kubernetes_master_nodes: []
+kubernetes_worker_nodes: []
+kubernetes_node: "{{ inventory_hostname }}"
+
+# Kubernetes Component Versions
+kubernetes_version: 1.25.3
+kubernetes_kubelet_version: "{{ kubernetes_version }}-00"
+kubernetes_kubeadm_version: "{{ kubernetes_version }}-00"
+kubernetes_kubectl_version: "{{ kubernetes_version }}-00"
+
+# Kubernetes Network Configs
+kubernetes_pod_network_cidr: 10.244.0.0/24
+kubernetes_service_network_cidr: 10.96.0.0/16
+kubernetes_apiserver_advertise_address: "{{ ansible_default_ipv4.address }}"
+kubernetes_apiserver_advertise_port: 6443
+kubernetes_cri_socket: unix:///var/run/containerd/containerd.sock
+
+# ApiServer Load Balancer Configs
+kubernetes_control_endpoint_address: dev-k8s.example.com
+kubernetes_control_endpoint_port: 6443
+
+# Kubernetes Secrets
+kubernetes_token: czh2jx.w18bxqpdnjyxm2tm
+kubernetes_certificate_key: 40f5c608d403f6a1f6f1b2f63ff5b5237b07b875426ec74d8e7d66c2a454662d
+
+# Kubernetes Cluster Name
+kubernetes_cluster_name: kubernetes
+kubernetes_dns_domain: cluster.local

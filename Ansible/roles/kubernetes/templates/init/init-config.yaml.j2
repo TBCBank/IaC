@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+bootstrapTokens:
+- token: "{{ kubernetes_token }}"
+  description: "kubeadm bootstrap token"
+  ttl: "0"
+localAPIEndpoint:
+  advertiseAddress: {{ kubernetes_apiserver_advertise_address }}
+  bindPort: {{ kubernetes_apiserver_advertise_port }}
+nodeRegistration:
+  criSocket: {{ kubernetes_cri_socket }}
+  name: {{ kubernetes_node }}
+certificateKey: "{{ kubernetes_certificate_key }}"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: {{ kubernetes_version }}
+controlPlaneEndpoint: {{ kubernetes_control_endpoint_address }}:{{ kubernetes_control_endpoint_port }}
+networking:
+  serviceSubnet: {{ kubernetes_service_network_cidr }}
+  podSubnet: {{ kubernetes_pod_network_cidr }}
+  dnsDomain: {{ kubernetes_dns_domain }}
+clusterName: {{ kubernetes_cluster_name }}
